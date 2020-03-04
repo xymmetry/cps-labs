@@ -1,6 +1,9 @@
 .begin
 .org 2200
 
+! code by marc j
+
+
 prog1: ld [x], %r1
  ld [x+4], %r2
  add %r1, %r2, %r1
