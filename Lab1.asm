@@ -1,0 +1,23 @@
+.begin
+.org 2200
+
+prog1: ld [x], %r1
+ ld [x+4], %r2
+ add %r1, %r2, %r1
+ ld [x+8], %r2
+ add %r1, %r2, %r1
+ ld [x+12], %r2
+ add %r1, %r2, %r1
+ ld [x+16], %r2
+ add %r1, %r2, %r1
+ st %r1, [2240]
+ 
+
+x: -1
+2
+-3
+4
+-5
+
+.end
+
