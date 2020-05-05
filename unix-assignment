@@ -1,0 +1,55 @@
+#!/bin/bash
+# search.txt
+# Marc Jason David
+# CCPS 393 
+# Purpose: to search a medication list and produce a report requested by the user
+#
+# I certify that the program and code are my own work.
+
+touch dosage
+touch gename
+
+while echo "Enter Medication Code?"
+read input
+[ $input != ZZZ ]
+# Medication code is read, temporary files are created
+# while loop only ends if the input is ZZZ
+do
+   while read lines
+   # While loop reads lines from the medslist
+   do
+     if [[ $(echo ${lines:4:7}) =~ $input ]]
+     # checks if the medical code input is in the medical code area of the line
+     # if the medical code field has the requested input then the generic name
+     # and the dosage fields are extracted to a gename and dosage file to extract later
+     then
+       echo "${lines:4:7} : ${lines:12:13}"  >> gename
+       echo "${lines:4:7} : ${lines:25:14}" >> dosage
+     fi
+   done < medslist
+   echo -n "See Generic Name (G/g) or Dose (D/d)?"
+   read prompt
+   # the prompt requests for the generic name or dosage and displays accordingly
+        if [ $prompt = G ] || [ $prompt = g ]
+                then
+                cat gename
+                > gename
+                > dosage
+                # the temp file is emptied to avoid repeating items
+        elif [ $prompt = D ] || [ $prompt = d ]
+                then
+                cat dosage
+                > dosage
+                > gename
+        else
+                echo "Please enter only G or D."
+        fi
+done
+echo "Good bye."
+
+# removal of the temp files
+rm gename
+rm dosage
+
+
+
