@@ -1,0 +1,127 @@
+// CCPS310 Lab for Arduino
+// Use assembly programming to create a controller that uses input and outputs specific lights
+// Marc Jason T. David
+// 500873075
+
+
+void analog_init()
+{
+ // Analog functions can be used as-is
+ ADCSRA |= (1 << ADEN);
+ ADMUX |= (1 << REFS0);
+ ADMUX |= (1 << ADLAR); // Left justified output for 8bit mode
+ ADCSRA |= (1 << ADSC); // start conversion
+}
+uint8_t analog8(uint8_t channel)
+{
+ // Analog functions can be used as-is
+ ADMUX &= 0xF0;
+ ADMUX |= channel;
+ ADCSRA |= (1 << ADSC);
+ while ( ADCSRA & ( 1 << ADSC ) );
+ return ADCH;
+}
+void setup()
+{
+ Serial.begin(9600);
+ analog_init();
+ asm("sbi 0x0A, 6"); // Set bit 6 in PORTD for output
+ asm("cbi 0x0A, 7"); // Clear bit 7 in PORTD for input
+ asm("sbi 0x0B, 7"); // Set pullup resistor for pin 7 in PORTD
+ // above setup is for the clicky thing
+ 
+ // below setup is for port 2-5
+ asm(" sbi 0x0A, 2 ");
+ asm(" sbi 0x0A, 3 ");
+ asm(" sbi 0x0A, 4 ");
+ asm(" sbi 0x0A, 5 "); 
+}
+void loop()
+{
+ asm(" start: ");
+ // Get analog values for X and Y
+ // Load from ADCH (0x79) into r16/r17
+ int x_axis = analog8(0);
+ asm(" lds r16, 0x79 ");
+ int y_axis = analog8(1);
+ asm(" lds r17, 0x79 ");
+
+// this is so cool
+ asm(" in r25, 0x09 "); // Load PIND into r25
+ asm(" andi r25, 0x80 "); // Bit-mask the 7th bit
+ asm(" cpi r25, 0x80 "); // Compare with 0x80
+ asm(" brne click_on "); // If not zero, branch to click_on
+ asm(" cbi 0x0B, 6 "); // Turn off LED
+ asm(" rjmp end ");
+ asm(" click_on: ");
+ asm(" sbi 0x0B, 6 "); // Turn on the clicky LED
+
+ asm(" end: ");
+ delay(2);
+
+ // Up direction logic
+ delay(200);
+ asm(" cpi r17, 0 "); // up is zero in y axis
+ asm(" breq up_on "); // if equal, branch to TURN ON UP
+
+ asm(" cbi 0x0B, 3 "); // off if not zero in y axis
+ asm(" rjmp up_end ");
+ 
+ asm(" up_on: "); // Turn on Up LED
+ asm(" sbi 0x0B, 3  ");
+
+ asm(" up_end: ");
+ delay(2);
+
+ 
+ // Left direction logic here. 
+ asm(" cpi r16, 0 "); // left is zero in the x axis so we compare the x axis value if it is zero
+ asm(" breq left_on "); // if equal, branch to TURN ON LEFT
+
+ asm(" cbi 0x0B, 2 "); 
+ asm(" rjmp left_end ");
+ 
+ asm(" left_on: "); // Turn on Left LED
+ asm(" sbi 0x0B, 2  ");
+
+ asm(" left_end: ");
+ delay(2);
+
+ 
+ // Down direction logic.
+ asm(" cpi r17, 255 "); // down is 255 in y axis
+ asm(" breq down_on "); // if equal, branch to TURN DOWN FOR WHAT
+
+ asm(" cbi 0x0B, 5 ");
+ asm(" rjmp down_end ");
+ 
+ asm(" down_on: "); // TURN DOWN LED
+ asm(" sbi 0x0B, 5  ");
+ asm(" down_end: ");
+ delay(2);
+
+ 
+ // Right direction logic.
+ asm(" cpi r16, 255 "); // right is 255 in x axis
+ asm(" breq right_on "); // if equal, branch to TURN RIGHT
+
+ asm(" cbi 0x0B, 4 ");
+ asm(" rjmp right_end ");
+ 
+ asm(" right_on: "); // Turn on right LED
+ asm(" sbi 0x0B, 4  "); 
+ 
+ asm(" right_end: "); 
+ delay(2);
+
+
+ // Serial code for handy debugging.
+ // to observe the values coming out of your ADC.
+ Serial.print("< ");
+ Serial.print(x_axis);
+ Serial.print(", ");
+ Serial.print(y_axis);
+ Serial.println(" >");
+ delay(2);
+ asm(" rjmp start "); 
+}
